@@ -35,7 +35,9 @@ def client():
     mock_scheduler.running = False
 
     with patch("app.database.engine", test_engine), \
-         patch("app.services.scheduler.scheduler", mock_scheduler):
+         patch("app.services.scheduler.scheduler", mock_scheduler), \
+         patch("app.main.start_scheduler", lambda db: None), \
+         patch("app.main.stop_scheduler", lambda: None):
 
         from app.main import app
         from app.database import get_db
