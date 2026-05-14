@@ -31,7 +31,8 @@ _T: dict[str, dict] = {
         ),
         # Sidebar — demo
         "quick_demo":   "🎯 Quick demo",
-        "demo_caption": "13 rows · 2 duplicates · 8 missing values · realistic HR data",
+        "demo_caption": "Realistic HR data with duplicates and missing values",
+        "demo_caption_template": "{rows} rows · {dupes} duplicates · {nulls} missing values · realistic HR data",
         "load_sample":  "⚡ Load sample CSV",
         "sample_loaded": "Sample loaded ✓",
         # Sidebar — upload
@@ -168,7 +169,8 @@ _T: dict[str, dict] = {
         ),
         # Sidebar — demo
         "quick_demo":   "🎯 Demo rápido",
-        "demo_caption": "13 filas · 2 duplicados · 8 valores faltantes · datos HR reales",
+        "demo_caption": "Datos HR reales con duplicados y valores faltantes",
+        "demo_caption_template": "{rows} filas · {dupes} duplicados · {nulls} valores faltantes · datos HR reales",
         "load_sample":  "⚡ Cargar CSV de ejemplo",
         "sample_loaded": "Ejemplo cargado ✓",
         # Sidebar — upload
@@ -197,7 +199,7 @@ _T: dict[str, dict] = {
             "Se envían alertas opcionales por Telegram, Email o WhatsApp al terminar",
         ],
         # Result box
-        "result_title":     "✅ Archivo procesado exitosamente — Job #{job_id}",
+        "result_title":     "✅ Archivo procesado exitosamente — Proceso #{job_id}",
         "original_rows":    "📥 Filas originales:",
         "clean_rows":       "✨ Filas limpias:",
         "pct_of_original":  "({pct}% del original)",
@@ -281,7 +283,7 @@ _T: dict[str, dict] = {
         "err_api":        "❌ Error API {code}: {detail}",
         "err_connect":    "❌ No se puede conectar a la API. Ejecuta: <code>uvicorn app.main:app --reload</code>",
         "err_api_down":   "⚠️ API no disponible. Inicia el backend: <code>uvicorn app.main:app --reload</code>",
-        "err_job_failed": "❌ <strong>Job #{job_id} falló.</strong> {error}",
+        "err_job_failed": "❌ <strong>Proceso #{job_id} falló.</strong> {error}",
         "err_unexpected": "❌ Error inesperado: {error}",
         # Footer
         "footer": (

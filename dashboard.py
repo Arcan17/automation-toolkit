@@ -17,6 +17,17 @@ from app.translations import LANGUAGES, t, tl
 API_URL         = "http://localhost:8000"
 SAMPLE_CSV_PATH = Path("data/sample_demo.csv")
 
+
+# ── Pre-compute sample stats once per session so demo caption is always accurate
+def _load_sample_stats() -> dict | None:
+    try:
+        from app.services.processor import load_file, clean
+        df = load_file(SAMPLE_CSV_PATH)
+        _, stats = clean(df)
+        return stats
+    except Exception:
+        return None
+
 st.set_page_config(
     page_title="Automation Toolkit",
     page_icon="⚙️",
@@ -109,7 +120,17 @@ with st.sidebar:
 
     # ── Demo file ─────────────────────────────────────────────────────────────
     st.subheader(t("quick_demo"))
-    st.caption(t("demo_caption"))
+    # Show dynamic stats from actual sample CSV (computed once per session)
+    if "sample_stats_cached" not in st.session_state:
+        st.session_state["sample_stats_cached"] = _load_sample_stats()
+    _ss = st.session_state["sample_stats_cached"]
+    if _ss:
+        st.caption(t("demo_caption_template",
+                     rows=_ss["rows_raw"],
+                     dupes=_ss["duplicates_removed"],
+                     nulls=_ss["nulls_filled"]))
+    else:
+        st.caption(t("demo_caption"))
     if st.button(t("load_sample"), use_container_width=True):
         if SAMPLE_CSV_PATH.exists():
             st.session_state["demo_bytes"] = SAMPLE_CSV_PATH.read_bytes()
@@ -269,10 +290,9 @@ if process_clicked and file_bytes:
                     if dl.status_code == 200:
                         fname_base   = file_name.rsplit(".", 1)[0]
                         out_filename = f"cleaned_{fname_base}_job{job_id}.xlsx"
-                        # Reports are always .xlsx — use excel key
-                        dl_key = "download_now_excel"
+                        # Label shows the output .xlsx filename — never the original .csv
                         st.download_button(
-                            t(dl_key, filename=file_name),
+                            t("download_now_excel", filename=out_filename),
                             data=dl.content,
                             file_name=out_filename,
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -389,10 +409,9 @@ elif jobs:
                 if dl.status_code == 200:
                     fname_base   = j["original_name"].rsplit(".", 1)[0]
                     out_filename = f"cleaned_{fname_base}_job{j['id']}.xlsx"
-                    # Report is always .xlsx regardless of original file type
-                    dl_key = "download_btn_excel"
+                    # Label shows the output .xlsx filename — never the original extension
                     st.download_button(
-                        t(dl_key, filename=j["original_name"]),
+                        t("download_btn_excel", filename=out_filename),
                         data=dl.content,
                         file_name=out_filename,
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -444,15 +463,24 @@ elif jobs:
             total_n = sum(j.get("nulls_filled") or 0 for j in chart_jobs)
 
             if len(chart_jobs) == 1 and (total_d + total_n) > 0:
-                # Donut — cleaner for a single job
+                # Donut — cleaner for a single job; only include non-zero slices
                 j0 = chart_jobs[0]
                 d  = j0.get("duplicates_removed") or 0
                 n  = j0.get("nulls_filled") or 0
+                pie_labels, pie_values, pie_colors = [], [], []
+                if d > 0:
+                    pie_labels.append(t("chart_dupes_legend"))
+                    pie_values.append(d)
+                    pie_colors.append("#f59e0b")
+                if n > 0:
+                    pie_labels.append(t("chart_nulls_legend"))
+                    pie_values.append(n)
+                    pie_colors.append("#6366f1")
                 fig2 = go.Figure(go.Pie(
-                    labels=[t("chart_dupes_legend"), t("chart_nulls_legend")],
-                    values=[d, n],
+                    labels=pie_labels,
+                    values=pie_values,
                     hole=0.55,
-                    marker_colors=["#f59e0b", "#6366f1"],
+                    marker_colors=pie_colors,
                     textinfo="label+value",
                     hovertemplate="%{label}: %{value}<extra></extra>",
                 ))
