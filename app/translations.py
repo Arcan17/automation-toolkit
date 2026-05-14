@@ -44,9 +44,15 @@ _T: dict[str, dict] = {
         "alert_enabled":   "✅ {channel}: enabled",
         "email_label":     "Email address",
         "phone_label":     "Email or phone (+56912345678)",
+        # Sidebar — upload label (shown above the file uploader widget)
+        # Note: Streamlit's internal "Drag and drop file here" and "Browse files"
+        # texts are rendered by the browser/Streamlit and cannot be translated.
+        "upload_label": "Upload a CSV or Excel file",
         # Sidebar — process
         "process_btn":  "🚀 Process file",
         "process_hint": "⬆️ Load a file or click **Load sample CSV** above.",
+        # Spinner
+        "spinner_processing": "Processing **{filename}**…",
         # How it works
         "how_title": "ℹ️ How it works",
         # (list — use tl())
@@ -67,10 +73,12 @@ _T: dict[str, dict] = {
         "report_ready":     "📊 Report: <strong>Ready to download</strong> (Summary + Clean Data sheets)",
         "alert_sent":       "🔔 Alert sent via {channels}",
         "no_alerts_sent":   "🔕 No alerts configured",
-        # Download
-        "download_section": "⬇️ Download Reports",
-        "download_btn":     "⬇️ Download Excel Report — {filename}",
-        "download_now":     "⬇️ Download cleaned report — {filename}",
+        # Download — label adapts to file type
+        "download_section":     "⬇️ Download Reports",
+        "download_btn_excel":   "⬇️ Download Excel Report — {filename}",
+        "download_btn_csv":     "⬇️ Download cleaned file — {filename}",
+        "download_now_excel":   "⬇️ Download Excel report — {filename}",
+        "download_now_csv":     "⬇️ Download cleaned file — {filename}",
         # Job history — header & KPIs
         "job_history":        "📋 Job History",
         "kpi_total":          "Total Jobs",
@@ -164,8 +172,9 @@ _T: dict[str, dict] = {
         "load_sample":  "⚡ Cargar CSV de ejemplo",
         "sample_loaded": "Ejemplo cargado ✓",
         # Sidebar — upload
-        "upload_file":  "📤 Subir archivo",
-        "upload_help":  "CSV (.csv) o Excel (.xlsx / .xls) — máx. 10 MB",
+        "upload_file":   "📤 Subir archivo",
+        "upload_label":  "Sube un archivo CSV o Excel",
+        "upload_help":   "CSV (.csv) o Excel (.xlsx / .xls) — máx. 10 MB",
         # Sidebar — notifications
         "notifications":   "🔔 Notificaciones",
         "notif_caption":   "Configura en `.env` para activar alertas reales.",
@@ -176,6 +185,8 @@ _T: dict[str, dict] = {
         # Sidebar — process
         "process_btn":  "🚀 Procesar archivo",
         "process_hint": "⬆️ Carga un archivo o haz clic en **Cargar CSV de ejemplo**.",
+        # Spinner
+        "spinner_processing": "Procesando **{filename}**…",
         # How it works
         "how_title": "ℹ️ Cómo funciona",
         "how_steps": [
@@ -195,39 +206,41 @@ _T: dict[str, dict] = {
         "report_ready":     "📊 Reporte: <strong>Listo para descargar</strong> (hojas Summary + Clean Data)",
         "alert_sent":       "🔔 Alerta enviada por {channels}",
         "no_alerts_sent":   "🔕 Sin alertas configuradas",
-        # Download
-        "download_section": "⬇️ Descargar Reportes",
-        "download_btn":     "⬇️ Descargar Reporte Excel — {filename}",
-        "download_now":     "⬇️ Descargar reporte limpio — {filename}",
+        # Download — label adapts to file type
+        "download_section":     "⬇️ Descargar Reportes",
+        "download_btn_excel":   "⬇️ Descargar reporte Excel — {filename}",
+        "download_btn_csv":     "⬇️ Descargar archivo limpio — {filename}",
+        "download_now_excel":   "⬇️ Descargar reporte Excel — {filename}",
+        "download_now_csv":     "⬇️ Descargar archivo limpio — {filename}",
         # Job history — header & KPIs
-        "job_history":        "📋 Historial de Jobs",
-        "kpi_total":          "Jobs Totales",
+        "job_history":        "📋 Historial de procesos",
+        "kpi_total":          "Procesos totales",
         "kpi_completed":      "Completados",
         "kpi_failed":         "Fallidos",
-        "kpi_rows":           "Filas Procesadas",
-        "kpi_dupes":          "Duplicados Eliminados",
-        "kpi_nulls":          "Valores Corregidos",
-        "kpi_reports":        "Reportes Generados",
+        "kpi_rows":           "Filas procesadas",
+        "kpi_dupes":          "Duplicados eliminados",
+        "kpi_nulls":          "Valores faltantes corregidos",
+        "kpi_reports":        "Reportes generados",
         # Table columns
         "col_file":           "Archivo",
         "col_status":         "Estado",
-        "col_original_rows":  "Filas Originales",
-        "col_clean_rows":     "Filas Limpias",
+        "col_original_rows":  "Filas originales",
+        "col_clean_rows":     "Filas limpias",
         "col_quality":        "Calidad",
-        "col_dupes":          "Duplicados Eliminados",
-        "col_nulls":          "Valores Corregidos",
+        "col_dupes":          "Duplicados eliminados",
+        "col_nulls":          "Valores faltantes corregidos",
         "col_date":           "Fecha",
         # Status values
         "status_done":        "✅ Completado",
         "status_failed":      "❌ Fallido",
         "status_processing":  "⏳ Procesando",
         # Charts
-        "chart_impact":       "📊 Impacto de Limpieza por Job",
-        "chart_issues":       "🔧 Problemas Resueltos por Job",
-        "chart_original":     "Filas Originales",
-        "chart_clean":        "Filas Limpias",
-        "chart_dupes_legend": "Duplicados Eliminados",
-        "chart_nulls_legend": "Valores Corregidos",
+        "chart_impact":       "📊 Impacto de limpieza por proceso",
+        "chart_issues":       "🔧 Problemas resueltos por proceso",
+        "chart_original":     "Filas originales",
+        "chart_clean":        "Filas limpias",
+        "chart_dupes_legend": "Duplicados eliminados",
+        "chart_nulls_legend": "Valores faltantes corregidos",
         "chart_issues_unit":  "problemas",
         "chart_already_clean": "Sin problemas — los datos ya estaban limpios ✅",
         "axis_rows":          "Filas",
@@ -256,7 +269,7 @@ _T: dict[str, dict] = {
         "task_never":         "Nunca",
         "task_no_alerts":     "Sin alertas",
         # Empty states
-        "no_jobs_title":  "Aún no hay jobs.",
+        "no_jobs_title":  "Aún no hay procesos.",
         "no_jobs_hint":   "Usa el sidebar para subir un archivo o haz clic en <strong>⚡ Cargar CSV de ejemplo</strong>.",
         "no_tasks_title": "Aún no hay tareas programadas",
         "no_tasks_hint":  (

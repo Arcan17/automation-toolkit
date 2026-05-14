@@ -359,57 +359,74 @@ tests/test_api.py::test_get_task_not_found                  PASSED
 
 ## 🌐 Multilingual UI
 
-The Streamlit dashboard supports **English** and **Español** out of the box.
+The Streamlit dashboard supports **English** and **Español** out of the box. English is the default language.
 
-A language selector at the top of the sidebar lets users switch languages instantly without losing app state (jobs, uploads, or session data).
+A language selector at the top of the sidebar lets users switch instantly without losing any app state (jobs, uploads, reports, scheduled tasks).
 
 ```
-🌐 Language / Idioma
-  ● English  (default)
-  ○ Español
+🌐 Language / Idioma  →  English (default)  |  Español
 ```
 
-### How it works
+### Covered translations
 
-All UI strings are managed in `app/translations.py` using a simple key-value dictionary. The helper function `t(key)` returns the correct string for the current language:
+Every visible UI string is translated, including:
 
-```python
-from app.translations import t, tl
-
-t("job_history")           # → "📋 Job History"  |  "📋 Historial de Jobs"
-t("kpi_rows")              # → "Rows Processed"   |  "Filas Procesadas"
-t("task_created", name="X") # → "✅ Task X created!" | "✅ Tarea X creada!"
-tl("how_steps")            # → list of step strings in the active language
-```
+| Section | Examples |
+|---|---|
+| Sidebar | tagline, quick demo, upload, notifications, process button |
+| How it works | all 5 steps |
+| KPIs | Rows Processed / Filas procesadas, Duplicates Removed / Duplicados eliminados |
+| Job table | all 8 column headers + status labels |
+| Charts | titles, axis labels, legend labels, donut center text |
+| Result box | all fields after processing |
+| Download buttons | "Download Excel Report" / "Descargar reporte Excel" |
+| Scheduled tasks | full form, empty state, last run label |
+| Error messages | all 5 error types |
+| Empty states | jobs and tasks |
 
 ### Technical terms kept in English
 
 The following terms are identical in both languages (standard in the industry):
-`CSV`, `Excel`, `API`, `FastAPI`, `Streamlit`, `Telegram`, `Email`, `WhatsApp`, `Job ID`, `.env`, `cron`
 
-### The REST API stays in English
+`CSV` · `Excel` · `API` · `FastAPI` · `Streamlit` · `Telegram` · `Email` · `WhatsApp` · `Job ID` · `.env` · `cron` · `Summary` · `Clean Data`
 
-All endpoints, response fields, and error messages remain in English for technical consistency. Only the Streamlit dashboard UI is translated.
+### API stays in English
+
+All REST endpoints, request/response fields, and backend error messages remain in English for technical consistency. Only the Streamlit dashboard UI is translated.
+
+### Streamlit limitation
+
+Streamlit's file uploader renders "Drag and drop file here" and "Browse files" in the browser's UI layer — these strings cannot be overridden via Python. A translated label is displayed above the uploader as a workaround.
+
+### How `t()` works
+
+```python
+from app.translations import t, tl
+
+t("job_history")                  # "📋 Job History"         | "📋 Historial de procesos"
+t("kpi_rows")                     # "Rows Processed"          | "Filas procesadas"
+t("task_created", name="Report")  # "✅ Task Report created!" | "✅ Tarea Report creada!"
+tl("how_steps")                   # list of step strings in the active language
+```
 
 ### Adding a third language
 
 ```python
-# In app/translations.py
+# app/translations.py
 from app.translations import add_language, LANGUAGES
 
 LANGUAGES["Português"] = "pt"
-
 add_language("pt", {
     "app_tagline": "Faça upload de ficheiros CSV ou Excel...",
-    "job_history": "📋 Histórico de Jobs",
+    "job_history": "📋 Histórico de processos",
     "process_btn": "🚀 Processar ficheiro",
-    # ... add all keys — missing keys fall back to English automatically
+    # Missing keys fall back to English automatically
 })
 ```
 
 ### Screenshots
 
-> Recommended: take screenshots in both languages showing the same state (e.g. after processing `sample_demo.csv`) to demonstrate multilingual support in your portfolio.
+Take screenshots in both languages after processing `sample_demo.csv` to show multilingual support in your portfolio and LinkedIn post.
 
 ---
 

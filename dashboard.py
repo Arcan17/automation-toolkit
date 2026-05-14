@@ -132,6 +132,10 @@ with st.sidebar:
 
     # ── Upload ────────────────────────────────────────────────────────────────
     st.subheader(t("upload_file"))
+    # Visible translated label above the uploader.
+    # Note: Streamlit's internal "Drag and drop file here" and "Browse files"
+    # texts are rendered by the browser and cannot be overridden via Python.
+    st.caption(t("upload_label"))
     uploaded = st.file_uploader(
         "file",
         type=["csv", "xlsx", "xls"],
@@ -212,7 +216,7 @@ st.markdown(f"""
 # Process action
 # ─────────────────────────────────────────────────────────────────────────────
 if process_clicked and file_bytes:
-    with st.spinner(f"Processing **{file_name}**…"):
+    with st.spinner(t("spinner_processing", filename=file_name)):
         try:
             resp = requests.post(
                 f"{API_URL}/jobs/upload",
@@ -263,11 +267,14 @@ if process_clicked and file_bytes:
 
                     dl = requests.get(f"{API_URL}/jobs/{job_id}/download", timeout=10)
                     if dl.status_code == 200:
-                        fname_base = file_name.rsplit(".", 1)[0]
+                        fname_base   = file_name.rsplit(".", 1)[0]
+                        out_filename = f"cleaned_{fname_base}_job{job_id}.xlsx"
+                        # Reports are always .xlsx — use excel key
+                        dl_key = "download_now_excel"
                         st.download_button(
-                            t("download_now", filename=file_name),
+                            t(dl_key, filename=file_name),
                             data=dl.content,
-                            file_name=f"cleaned_{fname_base}_job{job_id}.xlsx",
+                            file_name=out_filename,
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                             type="primary",
                         )
@@ -380,11 +387,14 @@ elif jobs:
             with cols[i % 4]:
                 dl = requests.get(f"{API_URL}/jobs/{j['id']}/download", timeout=10)
                 if dl.status_code == 200:
-                    fname_base = j["original_name"].rsplit(".", 1)[0]
+                    fname_base   = j["original_name"].rsplit(".", 1)[0]
+                    out_filename = f"cleaned_{fname_base}_job{j['id']}.xlsx"
+                    # Report is always .xlsx regardless of original file type
+                    dl_key = "download_btn_excel"
                     st.download_button(
-                        t("download_btn", filename=j["original_name"]),
+                        t(dl_key, filename=j["original_name"]),
                         data=dl.content,
-                        file_name=f"cleaned_{fname_base}_job{j['id']}.xlsx",
+                        file_name=out_filename,
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         key=f"dl_{j['id']}",
                         use_container_width=True,
