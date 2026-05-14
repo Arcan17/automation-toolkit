@@ -92,8 +92,6 @@ Automation Toolkit automates the entire cleaning pipeline in seconds, generates 
 |---|---|
 | ![API Docs](docs/screenshots/api-docs.png) | ![Excel Report](docs/screenshots/excel-report.png) |
 
-> **To capture screenshots:** run the app locally, process `data/sample_demo.csv`, and save each view to `docs/screenshots/`.
-
 ---
 
 ## 🔄 How it works
@@ -432,10 +430,6 @@ add_language("pt", {
 })
 ```
 
-### Screenshots
-
-Take screenshots in both languages after processing `sample_demo.csv` to show multilingual support in your portfolio and LinkedIn post.
-
 ---
 
 ## 🔮 Future improvements
@@ -460,18 +454,6 @@ Take screenshots in both languages after processing `sample_demo.csv` to show mu
 
 **For clients / non-technical:**
 > Automation Toolkit is a web tool that automatically cleans messy spreadsheets — removing duplicate records, fixing empty fields, and generating a professional Excel report. You upload a file, the system handles the rest, and you get an alert when it's ready.
-
----
-
-## 📸 What to screenshot
-
-For GitHub and LinkedIn:
-
-1. **Dashboard overview** — `http://localhost:8501` with jobs table + KPIs
-2. **Processing result** — the green success box after uploading `sample_demo.csv`
-3. **Excel report** — open the downloaded `.xlsx` and show Summary + Clean Data sheets
-4. **API docs** — `http://localhost:8000/docs` showing all endpoints
-5. **Charts** — the two side-by-side charts (cleaning impact + issues resolved)
 
 ---
 
