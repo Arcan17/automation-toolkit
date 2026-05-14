@@ -8,3 +8,6 @@ reports/
 *.db
 .DS_Store
 .env
+
+# Keep sample demo file
+!data/sample_demo.csv
