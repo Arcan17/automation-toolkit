@@ -84,13 +84,21 @@ Automation Toolkit automates the entire cleaning pipeline in seconds, generates 
 
 ## 📸 Screenshots
 
-| Dashboard (English) | Dashboard (Español) |
-|---|---|
-| ![Dashboard EN](docs/screenshots/dashboard-en.png) | ![Dashboard ES](docs/screenshots/dashboard-es.png) |
+### Dashboard — English
 
-| API Docs | Excel Report |
-|---|---|
-| ![API Docs](docs/screenshots/api-docs.png) | ![Excel Report](docs/screenshots/excel-report.png) |
+![Dashboard English](docs/screenshots/dashboard-en.png)
+
+### Dashboard — Español
+
+![Dashboard Spanish](docs/screenshots/dashboard-es.png)
+
+### FastAPI Documentation
+
+![API Docs](docs/screenshots/api-docs.png)
+
+### Excel Report
+
+![Excel Report](docs/screenshots/excel-report.png)
 
 ---
 
@@ -235,7 +243,7 @@ curl http://localhost:8000/jobs/1
   "rows_raw": 13,
   "rows_clean": 11,
   "duplicates_removed": 2,
-  "nulls_filled": 5,
+  "nulls_filled": 8,
   "report_path": "reports/report_1_20260514_120000.xlsx"
 }
 ```
