@@ -224,7 +224,7 @@ with st.sidebar:
 # ─────────────────────────────────────────────────────────────────────────────
 steps_html = "".join(f"<li>{s}</li>" for s in tl("how_steps"))
 st.markdown(f"""
-<div class="card">
+<div class="card" style="margin-top:24px">
   <h4>{t("how_title")}</h4>
   <ol style="margin:0; padding-left:20px; color:#cbd5e1; font-size:0.92rem; line-height:1.9">
     {steps_html}
