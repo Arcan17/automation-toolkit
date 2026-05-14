@@ -5,6 +5,7 @@ Upload CSV/Excel → Clean → Report → Alert
 Supports English and Español via the Language selector in the sidebar.
 """
 
+import os
 import time
 from pathlib import Path
 
@@ -14,7 +15,7 @@ import streamlit as st
 
 from app.translations import LANGUAGES, t, tl
 
-API_URL         = "http://localhost:8000"
+API_URL         = os.getenv("API_URL", "http://localhost:8000")
 SAMPLE_CSV_PATH = Path("data/sample_demo.csv")
 
 

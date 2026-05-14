@@ -84,7 +84,15 @@ Automation Toolkit automates the entire cleaning pipeline in seconds, generates 
 
 ## 📸 Screenshots
 
-> Add screenshots here after running locally. See [What to screenshot](#-what-to-screenshot) at the bottom.
+| Dashboard (English) | Dashboard (Español) |
+|---|---|
+| ![Dashboard EN](docs/screenshots/dashboard-en.png) | ![Dashboard ES](docs/screenshots/dashboard-es.png) |
+
+| API Docs | Excel Report |
+|---|---|
+| ![API Docs](docs/screenshots/api-docs.png) | ![Excel Report](docs/screenshots/excel-report.png) |
+
+> **To capture screenshots:** run the app locally, process `data/sample_demo.csv`, and save each view to `docs/screenshots/`.
 
 ---
 
@@ -272,8 +280,8 @@ A realistic sample CSV is included at `data/sample_demo.csv`:
 ```
 13 rows total
 2 duplicate rows
-5 missing values (email, age, salary, score)
-6 columns: name, email, department, age, salary, performance_score
+8 missing values (email ×3, age ×2, salary ×1, performance_score ×2)
+7 columns: name, email, department, age, salary, performance_score, start_date
 ```
 
 **Try it in the dashboard:**
