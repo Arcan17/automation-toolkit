@@ -69,6 +69,12 @@ st.markdown("""
     font-weight: 600;
     letter-spacing: 0.05em;
 }
+/* KPI section divider spacing */
+.kpi-divider { margin: 10px 0 4px 0; }
+/* Constrain main content on very wide screens */
+section[data-testid="stMain"] > div:first-child {
+    max-width: 1200px;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -87,7 +93,7 @@ with st.sidebar:
 
     # ── Demo file ─────────────────────────────────────────────────────────────
     st.subheader("🎯 Quick demo")
-    st.caption("13 rows · 2 duplicates · 5 missing values · realistic data")
+    st.caption("13 rows · 2 duplicates · 8 missing values · realistic HR data")
     if st.button("⚡ Load sample CSV", use_container_width=True):
         if SAMPLE_CSV_PATH.exists():
             st.session_state["demo_bytes"] = SAMPLE_CSV_PATH.read_bytes()
@@ -294,18 +300,20 @@ elif jobs:
     total_nulls  = sum(j.get("nulls_filled") or 0 for j in done_jobs)
     reports      = sum(1 for j in done_jobs if j.get("report_path"))
 
-    # KPI row 1
-    c1, c2, c3 = st.columns(3)
+    # KPI row 1 — job status
+    c1, c2, c3, _pad = st.columns([1, 1, 1, 1])
     c1.metric("Total Jobs",  total)
     c2.metric("Completed",   len(done_jobs))
     c3.metric("Failed",      failed,
               delta=f"+{failed}" if failed else None, delta_color="inverse")
 
-    # KPI row 2
+    st.markdown('<div class="kpi-divider"></div>', unsafe_allow_html=True)
+
+    # KPI row 2 — aggregate data impact
     c4, c5, c6, c7 = st.columns(4)
-    c4.metric("Rows Processed",       total_rows)
-    c5.metric("Duplicates Removed",   total_dupes)
-    c6.metric("Missing Values Fixed", total_nulls)
+    c4.metric("Rows Processed",       f"{total_rows:,}")
+    c5.metric("Duplicates Removed",   f"{total_dupes:,}")
+    c6.metric("Missing Values Fixed", f"{total_nulls:,}")
     c7.metric("Reports Generated",    reports)
 
     # Table
@@ -343,7 +351,7 @@ elif jobs:
                 if dl.status_code == 200:
                     fname_base = j["original_name"].rsplit(".", 1)[0]
                     st.download_button(
-                        f"⬇️ {j['original_name']} (Job #{j['id']})",
+                        f"⬇️ Download Excel Report — {j['original_name']}",
                         data=dl.content,
                         file_name=f"cleaned_{fname_base}_job{j['id']}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -354,61 +362,98 @@ elif jobs:
     # ── Charts ────────────────────────────────────────────────────────────────
     chart_jobs = [j for j in done_jobs if j.get("rows_raw")]
     if chart_jobs:
+        _LAYOUT = dict(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02),
+            margin=dict(l=0, r=0, t=36, b=0),
+            font=dict(color="#cbd5e1"),
+        )
+        _AXIS = dict(color="#94a3b8", gridcolor="rgba(255,255,255,0.07)")
+
         col_left, col_right = st.columns(2)
 
-        # Chart 1: Rows before vs after
+        # ── Chart 1: Rows before vs after ────────────────────────────────────
         with col_left:
             st.subheader("📊 Data Cleaning Impact per Job")
-            labels = [f"#{j['id']} {j['original_name'][:16]}" for j in chart_jobs]
+            labels = [f"#{j['id']} {j['original_name'][:18]}" for j in chart_jobs]
             fig = go.Figure()
             fig.add_trace(go.Bar(
                 name="Original Rows", x=labels,
-                y=[j["rows_raw"]  for j in chart_jobs],
+                y=[j["rows_raw"]   for j in chart_jobs],
                 marker_color="#ef4444",
             ))
             fig.add_trace(go.Bar(
-                name="Clean Rows", x=labels,
+                name="Clean Rows",   x=labels,
                 y=[j["rows_clean"] for j in chart_jobs],
                 marker_color="#22c55e",
             ))
             fig.update_layout(
-                barmode="group", paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                legend=dict(orientation="h", yanchor="bottom", y=1.02),
-                margin=dict(l=0, r=0, t=30, b=0),
-                xaxis=dict(title="", color="#94a3b8"),
-                yaxis=dict(title="Rows", color="#94a3b8", gridcolor="rgba(255,255,255,0.07)"),
-                font=dict(color="#cbd5e1"),
+                barmode="group",
+                xaxis=dict(title="", **_AXIS),
+                yaxis=dict(title="Rows", **_AXIS),
+                **_LAYOUT,
             )
             st.plotly_chart(fig, use_container_width=True)
 
-        # Chart 2: Issues resolved per job (stacked)
+        # ── Chart 2: Issues breakdown ────────────────────────────────────────
+        # Single job → donut showing proportion of issue types (more readable)
+        # Multiple jobs → stacked bar per job
         with col_right:
             st.subheader("🔧 Issues Resolved per Job")
-            labels2 = [f"#{j['id']} {j['original_name'][:16]}" for j in chart_jobs]
-            fig2 = go.Figure()
-            fig2.add_trace(go.Bar(
-                name="Duplicates Removed",
-                x=labels2,
-                y=[j.get("duplicates_removed") or 0 for j in chart_jobs],
-                marker_color="#f59e0b",
-            ))
-            fig2.add_trace(go.Bar(
-                name="Missing Values Fixed",
-                x=labels2,
-                y=[j.get("nulls_filled") or 0 for j in chart_jobs],
-                marker_color="#6366f1",
-            ))
-            fig2.update_layout(
-                barmode="stack", paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                legend=dict(orientation="h", yanchor="bottom", y=1.02),
-                margin=dict(l=0, r=0, t=30, b=0),
-                xaxis=dict(title="", color="#94a3b8"),
-                yaxis=dict(title="Issues", color="#94a3b8", gridcolor="rgba(255,255,255,0.07)"),
-                font=dict(color="#cbd5e1"),
-            )
-            st.plotly_chart(fig2, use_container_width=True)
+            total_dupes_chart = sum(j.get("duplicates_removed") or 0 for j in chart_jobs)
+            total_nulls_chart = sum(j.get("nulls_filled") or 0 for j in chart_jobs)
+
+            if len(chart_jobs) == 1 and (total_dupes_chart + total_nulls_chart) > 0:
+                # Donut — much better for a single job
+                j0 = chart_jobs[0]
+                d  = j0.get("duplicates_removed") or 0
+                n  = j0.get("nulls_filled") or 0
+                fig2 = go.Figure(go.Pie(
+                    labels=["Duplicates Removed", "Missing Values Fixed"],
+                    values=[d, n],
+                    hole=0.55,
+                    marker_colors=["#f59e0b", "#6366f1"],
+                    textinfo="label+value",
+                    hovertemplate="%{label}: %{value}<extra></extra>",
+                ))
+                fig2.add_annotation(
+                    text=f"<b>{d + n}</b><br><span style='font-size:11px'>issues</span>",
+                    x=0.5, y=0.5, showarrow=False,
+                    font=dict(size=18, color="#cbd5e1"),
+                )
+                fig2.update_layout(**_LAYOUT)
+                st.plotly_chart(fig2, use_container_width=True)
+            elif len(chart_jobs) > 1:
+                # Stacked bar — useful when comparing multiple jobs
+                labels2 = [f"#{j['id']} {j['original_name'][:18]}" for j in chart_jobs]
+                fig2 = go.Figure()
+                fig2.add_trace(go.Bar(
+                    name="Duplicates Removed",
+                    x=labels2,
+                    y=[j.get("duplicates_removed") or 0 for j in chart_jobs],
+                    marker_color="#f59e0b",
+                ))
+                fig2.add_trace(go.Bar(
+                    name="Missing Values Fixed",
+                    x=labels2,
+                    y=[j.get("nulls_filled") or 0 for j in chart_jobs],
+                    marker_color="#6366f1",
+                ))
+                fig2.update_layout(
+                    barmode="stack",
+                    xaxis=dict(title="", **_AXIS),
+                    yaxis=dict(title="Issues", **_AXIS),
+                    **_LAYOUT,
+                )
+                st.plotly_chart(fig2, use_container_width=True)
+            else:
+                st.markdown(
+                    '<div class="card" style="text-align:center; padding:48px 24px;">'
+                    '<p style="color:#64748b; margin:0">No issues found — data was already clean ✅</p>'
+                    "</div>",
+                    unsafe_allow_html=True,
+                )
 
 else:
     st.markdown("""
@@ -489,9 +534,11 @@ if scheduled:
         )
 else:
     st.markdown("""
-<div class="card" style="text-align:center; padding:24px;">
-  <p style="color:#64748b; margin:0; font-size:0.9rem">
-    No scheduled tasks yet. Use the form above to automate recurring processing.
+<div class="card" style="padding:24px 28px;">
+  <p style="color:#94a3b8; font-weight:600; margin:0 0 6px 0">No scheduled tasks yet</p>
+  <p style="color:#64748b; margin:0; font-size:0.88rem; line-height:1.6">
+    Create a scheduled task to automatically process a file on a recurring schedule.<br>
+    Example: run <strong>sales_report.csv</strong> every Monday at 8 am and get a Telegram alert when done.
   </p>
 </div>
 """, unsafe_allow_html=True)
