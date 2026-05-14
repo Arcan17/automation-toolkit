@@ -1,17 +1,20 @@
 """
 Streamlit dashboard for Automation Toolkit.
 Upload CSV/Excel → Clean → Report → Alert
+
+Supports English and Español via the Language selector in the sidebar.
 """
 
 import time
 from pathlib import Path
 
-import plotly.express as px
 import plotly.graph_objects as go
 import requests
 import streamlit as st
 
-API_URL = "http://localhost:8000"
+from app.translations import LANGUAGES, t, tl
+
+API_URL         = "http://localhost:8000"
 SAMPLE_CSV_PATH = Path("data/sample_demo.csv")
 
 st.set_page_config(
@@ -23,7 +26,6 @@ st.set_page_config(
 # ── CSS ────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-/* Dark-theme cards */
 .card {
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.10);
@@ -38,7 +40,6 @@ st.markdown("""
     letter-spacing: 0.08em;
     margin: 0 0 10px 0;
 }
-/* Success result box */
 .result-box {
     background: rgba(34,197,94,0.08);
     border: 1px solid rgba(34,197,94,0.35);
@@ -48,7 +49,6 @@ st.markdown("""
 }
 .result-box h4 { color: #4ade80; margin: 0 0 10px 0; font-size: 1rem; }
 .result-box p  { margin: 4px 0; color: #d1fae5; font-size: 0.9rem; }
-/* Error box */
 .error-box {
     background: rgba(239,68,68,0.08);
     border: 1px solid rgba(239,68,68,0.35);
@@ -57,7 +57,6 @@ st.markdown("""
     margin: 12px 0;
 }
 .error-box p { color: #fca5a5; margin: 0; font-size: 0.9rem; }
-/* Demo badge */
 .demo-badge {
     display: inline-block;
     background: rgba(251,191,36,0.15);
@@ -69,12 +68,8 @@ st.markdown("""
     font-weight: 600;
     letter-spacing: 0.05em;
 }
-/* KPI section divider spacing */
 .kpi-divider { margin: 10px 0 4px 0; }
-/* Constrain main content on very wide screens */
-section[data-testid="stMain"] > div:first-child {
-    max-width: 1200px;
-}
+section[data-testid="stMain"] > div:first-child { max-width: 1200px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -83,44 +78,65 @@ section[data-testid="stMain"] > div:first-child {
 # Sidebar
 # ─────────────────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("## ⚙️ Automation Toolkit")
-    st.markdown(
-        "Upload **CSV or Excel** files to automatically clean data, "
-        "remove duplicates, fix missing values, generate downloadable "
-        "reports, and send alerts."
+
+    # ── Language selector — always first ──────────────────────────────────────
+    lang_labels = list(LANGUAGES.keys())          # ["English", "Español"]
+    default_idx = 0                                # English first
+
+    # Restore previously selected label (survives reruns)
+    if "lang_label" not in st.session_state:
+        st.session_state["lang_label"] = lang_labels[default_idx]
+        st.session_state["lang"]       = LANGUAGES[lang_labels[default_idx]]
+
+    selected_label = st.selectbox(
+        "🌐 Language / Idioma",
+        lang_labels,
+        index=lang_labels.index(st.session_state["lang_label"]),
+        key="_lang_selectbox",
     )
+    # Sync session state without triggering extra reruns
+    if selected_label != st.session_state.get("lang_label"):
+        st.session_state["lang_label"] = selected_label
+        st.session_state["lang"]       = LANGUAGES[selected_label]
+        st.rerun()
+
+    st.markdown("---")
+
+    # ── App description ───────────────────────────────────────────────────────
+    st.markdown("## ⚙️ Automation Toolkit")
+    st.markdown(t("app_tagline"))
     st.markdown("---")
 
     # ── Demo file ─────────────────────────────────────────────────────────────
-    st.subheader("🎯 Quick demo")
-    st.caption("13 rows · 2 duplicates · 8 missing values · realistic HR data")
-    if st.button("⚡ Load sample CSV", use_container_width=True):
+    st.subheader(t("quick_demo"))
+    st.caption(t("demo_caption"))
+    if st.button(t("load_sample"), use_container_width=True):
         if SAMPLE_CSV_PATH.exists():
             st.session_state["demo_bytes"] = SAMPLE_CSV_PATH.read_bytes()
             st.session_state["demo_name"]  = "sample_demo.csv"
         else:
-            # Inline fallback
-            sample = (
-                "name,email,department,age,salary,score\n"
+            # Inline fallback if file is missing
+            fallback = (
+                "name,email,department,age,salary,performance_score\n"
                 "Alice,alice@co.com,Engineering,28,75000,9.2\n"
                 "Bob,bob@co.com,Marketing,34,62000,8.5\n"
                 "Alice,alice@co.com,Engineering,28,75000,9.2\n"
                 "Charlie,,Operations,41,,7.8\n"
                 "Diana,diana@co.com,Engineering,,88000,9.7\n"
             )
-            st.session_state["demo_bytes"] = sample.encode()
+            st.session_state["demo_bytes"] = fallback.encode()
             st.session_state["demo_name"]  = "sample_demo.csv"
-        st.success("Sample loaded ✓")
+        st.success(t("sample_loaded"))
 
     st.markdown("---")
 
     # ── Upload ────────────────────────────────────────────────────────────────
-    st.subheader("📤 Upload your file")
+    st.subheader(t("upload_file"))
     uploaded = st.file_uploader(
-        "CSV or Excel",
+        "file",
         type=["csv", "xlsx", "xls"],
         label_visibility="collapsed",
-        help="CSV (.csv) or Excel (.xlsx / .xls) — max 10 MB",
+        help=t("upload_help"),
     )
 
     file_bytes, file_name = None, None
@@ -140,8 +156,8 @@ with st.sidebar:
     st.markdown("---")
 
     # ── Notifications ─────────────────────────────────────────────────────────
-    st.subheader("🔔 Notifications")
-    st.caption("Configure in `.env` to enable real alerts.")
+    st.subheader(t("notifications"))
+    st.caption(t("notif_caption"))
 
     notify_telegram = st.checkbox("Telegram")
     notify_email    = st.checkbox("Email")
@@ -149,44 +165,44 @@ with st.sidebar:
     notify_target   = ""
     if notify_email or notify_whatsapp:
         notify_target = st.text_input(
-            "Email or phone (+56912345678)" if notify_whatsapp else "Email address"
+            t("phone_label") if notify_whatsapp else t("email_label")
         )
 
-    # Notification status preview
-    active = [
-        ch for ch, on in [("Telegram", notify_telegram), ("Email", notify_email), ("WhatsApp", notify_whatsapp)]
+    active_channels = [
+        ch for ch, on in [
+            ("Telegram", notify_telegram),
+            ("Email",    notify_email),
+            ("WhatsApp", notify_whatsapp),
+        ]
         if on
     ]
-    if active:
-        for ch in active:
-            st.caption(f"✅ {ch}: enabled")
+    if active_channels:
+        for ch in active_channels:
+            st.caption(t("alert_enabled", channel=ch))
     else:
-        st.caption("ℹ️ No alerts — file will be processed silently.")
+        st.caption(t("no_alerts"))
 
     st.markdown("---")
 
     process_clicked = st.button(
-        "🚀 Process file",
+        t("process_btn"),
         type="primary",
         disabled=file_bytes is None,
         use_container_width=True,
     )
     if file_bytes is None:
-        st.caption("⬆️ Load a file or click **Load sample CSV** above.")
+        st.caption(t("process_hint"))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Hero / How it works
+# How it works
 # ─────────────────────────────────────────────────────────────────────────────
-st.markdown("""
+steps_html = "".join(f"<li>{s}</li>" for s in tl("how_steps"))
+st.markdown(f"""
 <div class="card">
-  <h4>ℹ️ How it works</h4>
+  <h4>{t("how_title")}</h4>
   <ol style="margin:0; padding-left:20px; color:#cbd5e1; font-size:0.92rem; line-height:1.9">
-    <li>Upload a CSV or Excel file <em>(or use the sample)</em></li>
-    <li>Duplicate rows are detected and removed automatically</li>
-    <li>Missing values are filled — <code>0</code> for numbers, <code>N/A</code> for text</li>
-    <li>A clean Excel report is generated with a <strong>Summary</strong> sheet and a <strong>Clean Data</strong> sheet</li>
-    <li>Optional alerts sent via Telegram, Email or WhatsApp when complete</li>
+    {steps_html}
   </ol>
 </div>
 """, unsafe_allow_html=True)
@@ -212,7 +228,7 @@ if process_clicked and file_bytes:
 
             if resp.status_code == 200:
                 job_id = resp.json()["job_id"]
-                job = {}
+                job    = {}
                 for _ in range(30):
                     time.sleep(0.5)
                     poll = requests.get(f"{API_URL}/jobs/{job_id}", timeout=5)
@@ -222,128 +238,143 @@ if process_clicked and file_bytes:
                             break
 
                 if job.get("status") == "done":
-                    rows_raw   = job.get("rows_raw") or 0
-                    rows_clean = job.get("rows_clean") or 0
-                    dupes      = job.get("duplicates_removed") or 0
-                    nulls      = job.get("nulls_filled") or 0
-                    pct_clean  = round(rows_clean / rows_raw * 100, 1) if rows_raw else 100
-
+                    rows_raw  = job.get("rows_raw") or 0
+                    rows_clean= job.get("rows_clean") or 0
+                    dupes     = job.get("duplicates_removed") or 0
+                    nulls     = job.get("nulls_filled") or 0
+                    pct       = round(rows_clean / rows_raw * 100, 1) if rows_raw else 100
                     notif_line = (
-                        "🔔 Alert sent via " + ", ".join(active)
-                        if active else "🔕 No alerts configured"
+                        t("alert_sent", channels=", ".join(active_channels))
+                        if active_channels
+                        else t("no_alerts_sent")
                     )
-
                     st.markdown(f"""
 <div class="result-box">
-  <h4>✅ File processed successfully — Job #{job_id}</h4>
+  <h4>{t("result_title", job_id=job_id)}</h4>
   <p>📄 <strong>{file_name}</strong></p>
-  <p>📥 Original rows: <strong>{rows_raw}</strong></p>
-  <p>✨ Clean rows: <strong>{rows_clean}</strong> ({pct_clean}% of original)</p>
-  <p>🗑️ Duplicates removed: <strong>{dupes}</strong></p>
-  <p>🩹 Missing values fixed: <strong>{nulls}</strong></p>
-  <p>📊 Report: <strong>Ready to download</strong> (Summary + Clean Data sheets)</p>
+  <p>{t("original_rows")} <strong>{rows_raw}</strong></p>
+  <p>{t("clean_rows")} <strong>{rows_clean}</strong> {t("pct_of_original", pct=pct)}</p>
+  <p>{t("dupes_removed")} <strong>{dupes}</strong></p>
+  <p>{t("nulls_fixed")} <strong>{nulls}</strong></p>
+  <p>{t("report_ready")}</p>
   <p>{notif_line}</p>
 </div>
 """, unsafe_allow_html=True)
 
                     dl = requests.get(f"{API_URL}/jobs/{job_id}/download", timeout=10)
                     if dl.status_code == 200:
-                        fname_out = file_name.rsplit(".", 1)[0]
+                        fname_base = file_name.rsplit(".", 1)[0]
                         st.download_button(
-                            f"⬇️ Download cleaned report — {file_name}",
+                            t("download_now", filename=file_name),
                             data=dl.content,
-                            file_name=f"cleaned_{fname_out}_job{job_id}.xlsx",
+                            file_name=f"cleaned_{fname_base}_job{job_id}.xlsx",
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                             type="primary",
                         )
+
                 elif job.get("status") == "failed":
-                    st.markdown(f"""
-<div class="error-box">
-  <p>❌ <strong>Job #{job_id} failed.</strong> {job.get('error', 'Unknown error.')}</p>
-</div>
-""", unsafe_allow_html=True)
+                    st.markdown(
+                        f'<div class="error-box"><p>'
+                        f'{t("err_job_failed", job_id=job_id, error=job.get("error", ""))}'
+                        f'</p></div>',
+                        unsafe_allow_html=True,
+                    )
             else:
-                body = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else {}
+                body   = resp.json() if "application/json" in resp.headers.get("content-type", "") else {}
                 detail = body.get("detail", resp.text)
-                st.markdown(f'<div class="error-box"><p>❌ API error {resp.status_code}: {detail}</p></div>',
-                            unsafe_allow_html=True)
+                st.markdown(
+                    f'<div class="error-box"><p>'
+                    f'{t("err_api", code=resp.status_code, detail=detail)}'
+                    f'</p></div>',
+                    unsafe_allow_html=True,
+                )
+
         except requests.exceptions.ConnectionError:
-            st.markdown('<div class="error-box"><p>❌ Cannot connect to API. Run: <code>uvicorn app.main:app --reload</code></p></div>',
-                        unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="error-box"><p>{t("err_connect")}</p></div>',
+                unsafe_allow_html=True,
+            )
         except Exception as e:
-            st.markdown(f'<div class="error-box"><p>❌ Unexpected error: {e}</p></div>',
-                        unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="error-box"><p>{t("err_unexpected", error=e)}</p></div>',
+                unsafe_allow_html=True,
+            )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Job history
 # ─────────────────────────────────────────────────────────────────────────────
-st.header("📋 Job History")
+st.header(t("job_history"))
 
 api_ok = True
 try:
     resp = requests.get(f"{API_URL}/jobs/", timeout=4)
     jobs = resp.json() if resp.status_code == 200 else []
 except Exception:
-    jobs = []
+    jobs   = []
     api_ok = False
 
 if not api_ok:
-    st.markdown('<div class="error-box"><p>⚠️ API not reachable. Start the backend: <code>uvicorn app.main:app --reload</code></p></div>',
-                unsafe_allow_html=True)
-elif jobs:
-    done_jobs    = [j for j in jobs if j["status"] == "done"]
-    total        = len(jobs)
-    failed       = sum(1 for j in jobs if j["status"] == "failed")
-    total_rows   = sum(j.get("rows_raw") or 0 for j in done_jobs)
-    total_dupes  = sum(j.get("duplicates_removed") or 0 for j in done_jobs)
-    total_nulls  = sum(j.get("nulls_filled") or 0 for j in done_jobs)
-    reports      = sum(1 for j in done_jobs if j.get("report_path"))
+    st.markdown(
+        f'<div class="error-box"><p>{t("err_api_down")}</p></div>',
+        unsafe_allow_html=True,
+    )
 
-    # KPI row 1 — job status
-    c1, c2, c3, _pad = st.columns([1, 1, 1, 1])
-    c1.metric("Total Jobs",  total)
-    c2.metric("Completed",   len(done_jobs))
-    c3.metric("Failed",      failed,
+elif jobs:
+    import polars as pl
+
+    done_jobs   = [j for j in jobs if j["status"] == "done"]
+    total       = len(jobs)
+    failed      = sum(1 for j in jobs if j["status"] == "failed")
+    total_rows  = sum(j.get("rows_raw") or 0 for j in done_jobs)
+    total_dupes = sum(j.get("duplicates_removed") or 0 for j in done_jobs)
+    total_nulls = sum(j.get("nulls_filled") or 0 for j in done_jobs)
+    reports     = sum(1 for j in done_jobs if j.get("report_path"))
+
+    # ── KPI row 1 — job status ─────────────────────────────────────────────
+    c1, c2, c3, _p = st.columns([1, 1, 1, 1])
+    c1.metric(t("kpi_total"),     total)
+    c2.metric(t("kpi_completed"), len(done_jobs))
+    c3.metric(t("kpi_failed"),    failed,
               delta=f"+{failed}" if failed else None, delta_color="inverse")
 
     st.markdown('<div class="kpi-divider"></div>', unsafe_allow_html=True)
 
-    # KPI row 2 — aggregate data impact
+    # ── KPI row 2 — data impact ────────────────────────────────────────────
     c4, c5, c6, c7 = st.columns(4)
-    c4.metric("Rows Processed",       f"{total_rows:,}")
-    c5.metric("Duplicates Removed",   f"{total_dupes:,}")
-    c6.metric("Missing Values Fixed", f"{total_nulls:,}")
-    c7.metric("Reports Generated",    reports)
+    c4.metric(t("kpi_rows"),    f"{total_rows:,}")
+    c5.metric(t("kpi_dupes"),   f"{total_dupes:,}")
+    c6.metric(t("kpi_nulls"),   f"{total_nulls:,}")
+    c7.metric(t("kpi_reports"), reports)
 
-    # Table
-    import polars as pl
+    # ── Jobs table ─────────────────────────────────────────────────────────
+    status_map = {
+        "done":       t("status_done"),
+        "failed":     t("status_failed"),
+        "processing": t("status_processing"),
+    }
     rows = []
     for j in jobs:
         raw   = j.get("rows_raw") or 0
         clean = j.get("rows_clean") or 0
-        pct   = f"{round(clean/raw*100)}%" if raw else "—"
+        pct   = f"{round(clean / raw * 100)}%" if raw else "—"
         rows.append({
-            "#":                    j["id"],
-            "File":                 j["original_name"],
-            "Status": {
-                "done":       "✅ Done",
-                "failed":     "❌ Failed",
-                "processing": "⏳ Processing",
-            }.get(j["status"], j["status"]),
-            "Original Rows":        raw,
-            "Clean Rows":           clean,
-            "Quality":              pct,
-            "Duplicates Removed":   j.get("duplicates_removed") or 0,
-            "Missing Values Fixed": j.get("nulls_filled") or 0,
-            "Date":                 j.get("created_at", "")[:19].replace("T", " "),
+            "#":                   j["id"],
+            t("col_file"):         j["original_name"],
+            t("col_status"):       status_map.get(j["status"], j["status"]),
+            t("col_original_rows"):raw,
+            t("col_clean_rows"):   clean,
+            t("col_quality"):      pct,
+            t("col_dupes"):        j.get("duplicates_removed") or 0,
+            t("col_nulls"):        j.get("nulls_filled") or 0,
+            t("col_date"):         j.get("created_at", "")[:19].replace("T", " "),
         })
     st.dataframe(pl.DataFrame(rows).to_pandas(), use_container_width=True, hide_index=True)
 
-    # Download buttons
+    # ── Download buttons ───────────────────────────────────────────────────
     reportable = [j for j in done_jobs if j.get("report_path")]
     if reportable:
-        st.subheader("⬇️ Download Reports")
+        st.subheader(t("download_section"))
         cols = st.columns(min(len(reportable), 4))
         for i, j in enumerate(reportable):
             with cols[i % 4]:
@@ -351,7 +382,7 @@ elif jobs:
                 if dl.status_code == 200:
                     fname_base = j["original_name"].rsplit(".", 1)[0]
                     st.download_button(
-                        f"⬇️ Download Excel Report — {j['original_name']}",
+                        t("download_btn", filename=j["original_name"]),
                         data=dl.content,
                         file_name=f"cleaned_{fname_base}_job{j['id']}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -359,7 +390,7 @@ elif jobs:
                         use_container_width=True,
                     )
 
-    # ── Charts ────────────────────────────────────────────────────────────────
+    # ── Charts ─────────────────────────────────────────────────────────────
     chart_jobs = [j for j in done_jobs if j.get("rows_raw")]
     if chart_jobs:
         _LAYOUT = dict(
@@ -373,44 +404,42 @@ elif jobs:
 
         col_left, col_right = st.columns(2)
 
-        # ── Chart 1: Rows before vs after ────────────────────────────────────
+        # Chart 1 — rows before vs after
         with col_left:
-            st.subheader("📊 Data Cleaning Impact per Job")
+            st.subheader(t("chart_impact"))
             labels = [f"#{j['id']} {j['original_name'][:18]}" for j in chart_jobs]
             fig = go.Figure()
             fig.add_trace(go.Bar(
-                name="Original Rows", x=labels,
+                name=t("chart_original"), x=labels,
                 y=[j["rows_raw"]   for j in chart_jobs],
                 marker_color="#ef4444",
             ))
             fig.add_trace(go.Bar(
-                name="Clean Rows",   x=labels,
+                name=t("chart_clean"),   x=labels,
                 y=[j["rows_clean"] for j in chart_jobs],
                 marker_color="#22c55e",
             ))
             fig.update_layout(
                 barmode="group",
                 xaxis=dict(title="", **_AXIS),
-                yaxis=dict(title="Rows", **_AXIS),
+                yaxis=dict(title=t("axis_rows"), **_AXIS),
                 **_LAYOUT,
             )
             st.plotly_chart(fig, use_container_width=True)
 
-        # ── Chart 2: Issues breakdown ────────────────────────────────────────
-        # Single job → donut showing proportion of issue types (more readable)
-        # Multiple jobs → stacked bar per job
+        # Chart 2 — issues breakdown
         with col_right:
-            st.subheader("🔧 Issues Resolved per Job")
-            total_dupes_chart = sum(j.get("duplicates_removed") or 0 for j in chart_jobs)
-            total_nulls_chart = sum(j.get("nulls_filled") or 0 for j in chart_jobs)
+            st.subheader(t("chart_issues"))
+            total_d = sum(j.get("duplicates_removed") or 0 for j in chart_jobs)
+            total_n = sum(j.get("nulls_filled") or 0 for j in chart_jobs)
 
-            if len(chart_jobs) == 1 and (total_dupes_chart + total_nulls_chart) > 0:
-                # Donut — much better for a single job
+            if len(chart_jobs) == 1 and (total_d + total_n) > 0:
+                # Donut — cleaner for a single job
                 j0 = chart_jobs[0]
                 d  = j0.get("duplicates_removed") or 0
                 n  = j0.get("nulls_filled") or 0
                 fig2 = go.Figure(go.Pie(
-                    labels=["Duplicates Removed", "Missing Values Fixed"],
+                    labels=[t("chart_dupes_legend"), t("chart_nulls_legend")],
                     values=[d, n],
                     hole=0.55,
                     marker_colors=["#f59e0b", "#6366f1"],
@@ -418,50 +447,50 @@ elif jobs:
                     hovertemplate="%{label}: %{value}<extra></extra>",
                 ))
                 fig2.add_annotation(
-                    text=f"<b>{d + n}</b><br><span style='font-size:11px'>issues</span>",
+                    text=(
+                        f"<b>{d + n}</b><br>"
+                        f"<span style='font-size:11px'>{t('chart_issues_unit')}</span>"
+                    ),
                     x=0.5, y=0.5, showarrow=False,
                     font=dict(size=18, color="#cbd5e1"),
                 )
                 fig2.update_layout(**_LAYOUT)
                 st.plotly_chart(fig2, use_container_width=True)
+
             elif len(chart_jobs) > 1:
-                # Stacked bar — useful when comparing multiple jobs
                 labels2 = [f"#{j['id']} {j['original_name'][:18]}" for j in chart_jobs]
                 fig2 = go.Figure()
                 fig2.add_trace(go.Bar(
-                    name="Duplicates Removed",
-                    x=labels2,
+                    name=t("chart_dupes_legend"), x=labels2,
                     y=[j.get("duplicates_removed") or 0 for j in chart_jobs],
                     marker_color="#f59e0b",
                 ))
                 fig2.add_trace(go.Bar(
-                    name="Missing Values Fixed",
-                    x=labels2,
+                    name=t("chart_nulls_legend"), x=labels2,
                     y=[j.get("nulls_filled") or 0 for j in chart_jobs],
                     marker_color="#6366f1",
                 ))
                 fig2.update_layout(
                     barmode="stack",
                     xaxis=dict(title="", **_AXIS),
-                    yaxis=dict(title="Issues", **_AXIS),
+                    yaxis=dict(title=t("axis_issues"), **_AXIS),
                     **_LAYOUT,
                 )
                 st.plotly_chart(fig2, use_container_width=True)
             else:
                 st.markdown(
-                    '<div class="card" style="text-align:center; padding:48px 24px;">'
-                    '<p style="color:#64748b; margin:0">No issues found — data was already clean ✅</p>'
-                    "</div>",
+                    f'<div class="card" style="text-align:center;padding:48px 24px;">'
+                    f'<p style="color:#64748b;margin:0">{t("chart_already_clean")}</p>'
+                    f'</div>',
                     unsafe_allow_html=True,
                 )
 
 else:
-    st.markdown("""
+    st.markdown(f"""
 <div class="card" style="text-align:center; padding:32px;">
   <p style="color:#64748b; font-size:1.1rem; margin:0">
-    No jobs yet.<br>
-    <span style="font-size:0.9rem">Use the sidebar to upload a file or click
-    <strong>⚡ Load sample CSV</strong> for a quick demo.</span>
+    {t("no_jobs_title")}<br>
+    <span style="font-size:0.9rem">{t("no_jobs_hint")}</span>
   </p>
 </div>
 """, unsafe_allow_html=True)
@@ -470,7 +499,7 @@ else:
 # ─────────────────────────────────────────────────────────────────────────────
 # Scheduled tasks
 # ─────────────────────────────────────────────────────────────────────────────
-st.header("🗓️ Scheduled Tasks")
+st.header(t("scheduled_tasks"))
 
 try:
     resp      = requests.get(f"{API_URL}/tasks/", timeout=4)
@@ -478,31 +507,25 @@ try:
 except Exception:
     scheduled = []
 
-with st.expander("➕ Create a new scheduled task"):
-    st.caption(
-        "Automatically process a file on a recurring schedule and optionally send alerts."
-    )
+with st.expander(t("create_task_exp")):
+    st.caption(t("task_exp_caption"))
     with st.form("new_task"):
         col1, col2 = st.columns(2)
         with col1:
-            t_name = st.text_input("Task name", placeholder="Weekly sales report")
-            t_file = st.text_input("Filename (must already be uploaded)", placeholder="clients.csv")
+            t_name = st.text_input(t("task_name_lbl"), placeholder=t("task_name_ph"))
+            t_file = st.text_input(t("task_file_lbl"), placeholder=t("task_file_ph"))
         with col2:
-            t_cron = st.text_input("Cron expression", placeholder="0 8 * * 1")
-            st.caption(
-                "Examples: `0 8 * * 1` Mon 8am · "
-                "`0 9 * * 1-5` weekdays 9am · "
-                "`0 8 1 * *` 1st of month"
-            )
+            t_cron = st.text_input(t("task_cron_lbl"), placeholder=t("task_cron_ph"))
+            st.caption(t("task_cron_help"))
         tc1, tc2, tc3 = st.columns(3)
         t_telegram  = tc1.checkbox("Telegram")
         t_email     = tc2.checkbox("Email")
         t_whatsapp  = tc3.checkbox("WhatsApp")
-        t_target    = st.text_input("Email or phone (if Email/WhatsApp selected)")
+        t_target    = st.text_input(t("task_target_lbl"))
 
-        if st.form_submit_button("✅ Create task", type="primary"):
+        if st.form_submit_button(t("task_submit"), type="primary"):
             if not (t_name and t_file and t_cron):
-                st.warning("Name, filename and cron expression are required.")
+                st.warning(t("task_required"))
             else:
                 try:
                     r = requests.post(f"{API_URL}/tasks/", json={
@@ -511,34 +534,35 @@ with st.expander("➕ Create a new scheduled task"):
                         "notify_whatsapp": t_whatsapp, "notify_target": t_target or None,
                     }, timeout=10)
                     if r.status_code == 200:
-                        st.success(f"✅ Task **{t_name}** created!")
+                        st.success(t("task_created", name=t_name))
                         st.rerun()
                     else:
                         detail = r.json().get("detail", r.text)
-                        st.error(f"Error: {detail}")
+                        st.error(t("task_api_error", detail=detail))
                 except Exception as e:
                     st.error(str(e))
 
 if scheduled:
     for task in scheduled:
-        icon   = "🟢" if task["is_active"] else "🔴"
-        notifs = ", ".join(filter(None, [
+        icon    = "🟢" if task["is_active"] else "🔴"
+        notifs  = ", ".join(filter(None, [
             "Telegram"  if task.get("notify_telegram")  else "",
             "Email"     if task.get("notify_email")     else "",
             "WhatsApp"  if task.get("notify_whatsapp")  else "",
-        ])) or "No alerts"
-        last_run = task.get("last_run", "Never")[:19].replace("T", " ") if task.get("last_run") else "Never"
+        ])) or t("task_no_alerts")
+        raw_run = task.get("last_run")
+        last_run = raw_run[:19].replace("T", " ") if raw_run else t("task_never")
         st.markdown(
             f"{icon} **#{task['id']} {task['name']}** — "
-            f"`{task['cron_expr']}` — 🔔 {notifs} — Last run: {last_run}"
+            f"`{task['cron_expr']}` — 🔔 {notifs} — "
+            f"{t('task_last_run')} {last_run}"
         )
 else:
-    st.markdown("""
+    st.markdown(f"""
 <div class="card" style="padding:24px 28px;">
-  <p style="color:#94a3b8; font-weight:600; margin:0 0 6px 0">No scheduled tasks yet</p>
+  <p style="color:#94a3b8; font-weight:600; margin:0 0 6px 0">{t("no_tasks_title")}</p>
   <p style="color:#64748b; margin:0; font-size:0.88rem; line-height:1.6">
-    Create a scheduled task to automatically process a file on a recurring schedule.<br>
-    Example: run <strong>sales_report.csv</strong> every Monday at 8 am and get a Telegram alert when done.
+    {t("no_tasks_hint")}
   </p>
 </div>
 """, unsafe_allow_html=True)
@@ -548,8 +572,4 @@ else:
 # Footer
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("---")
-st.caption(
-    "Automation Toolkit v1.0 · FastAPI + Streamlit + Polars · "
-    "[API Docs](http://localhost:8000/docs) · "
-    "[GitHub](https://github.com/Arcan17/automation-toolkit)"
-)
+st.caption(t("footer"))

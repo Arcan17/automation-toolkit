@@ -357,6 +357,62 @@ tests/test_api.py::test_get_task_not_found                  PASSED
 
 ---
 
+## 🌐 Multilingual UI
+
+The Streamlit dashboard supports **English** and **Español** out of the box.
+
+A language selector at the top of the sidebar lets users switch languages instantly without losing app state (jobs, uploads, or session data).
+
+```
+🌐 Language / Idioma
+  ● English  (default)
+  ○ Español
+```
+
+### How it works
+
+All UI strings are managed in `app/translations.py` using a simple key-value dictionary. The helper function `t(key)` returns the correct string for the current language:
+
+```python
+from app.translations import t, tl
+
+t("job_history")           # → "📋 Job History"  |  "📋 Historial de Jobs"
+t("kpi_rows")              # → "Rows Processed"   |  "Filas Procesadas"
+t("task_created", name="X") # → "✅ Task X created!" | "✅ Tarea X creada!"
+tl("how_steps")            # → list of step strings in the active language
+```
+
+### Technical terms kept in English
+
+The following terms are identical in both languages (standard in the industry):
+`CSV`, `Excel`, `API`, `FastAPI`, `Streamlit`, `Telegram`, `Email`, `WhatsApp`, `Job ID`, `.env`, `cron`
+
+### The REST API stays in English
+
+All endpoints, response fields, and error messages remain in English for technical consistency. Only the Streamlit dashboard UI is translated.
+
+### Adding a third language
+
+```python
+# In app/translations.py
+from app.translations import add_language, LANGUAGES
+
+LANGUAGES["Português"] = "pt"
+
+add_language("pt", {
+    "app_tagline": "Faça upload de ficheiros CSV ou Excel...",
+    "job_history": "📋 Histórico de Jobs",
+    "process_btn": "🚀 Processar ficheiro",
+    # ... add all keys — missing keys fall back to English automatically
+})
+```
+
+### Screenshots
+
+> Recommended: take screenshots in both languages showing the same state (e.g. after processing `sample_demo.csv`) to demonstrate multilingual support in your portfolio.
+
+---
+
 ## 🔮 Future improvements
 
 - [ ] PostgreSQL support for production deployments
