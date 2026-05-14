@@ -19,7 +19,7 @@ SAMPLE_CSV_PATH = Path("data/sample_demo.csv")
 
 
 # ── Pre-compute sample stats once per session so demo caption is always accurate
-def _load_sample_stats() -> dict | None:
+def _load_sample_stats():
     try:
         from app.services.processor import load_file, clean
         df = load_file(SAMPLE_CSV_PATH)
