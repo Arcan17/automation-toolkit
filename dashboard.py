@@ -19,22 +19,18 @@ st.set_page_config(
 st.markdown("""
 <style>
 .result-box {
-    background: #f0fdf4; border: 1px solid #86efac;
+    background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.4);
     border-radius: 8px; padding: 16px 20px; margin: 12px 0;
 }
-.result-box h4 { color: #16a34a; margin: 0 0 8px 0; }
-.result-box p  { margin: 3px 0; color: #1f2937; font-size: 0.92rem; }
+.result-box h4 { color: #4ade80; margin: 0 0 8px 0; }
+.result-box p  { margin: 3px 0; color: #d1fae5; font-size: 0.92rem; }
 .how-box {
-    background: #f8fafc; border: 1px solid #cbd5e1;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
     border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;
 }
-.how-box h4 { color: #334155; margin: 0 0 10px 0; font-size: 1rem; }
-.how-box ol { margin: 0; padding-left: 20px; color: #475569; font-size: 0.9rem; }
-.how-box li { margin-bottom: 4px; }
-.notif-status {
-    font-size: 0.8rem; padding: 4px 8px;
-    border-radius: 4px; margin-top: 4px;
-}
+.how-box h4 { color: #94a3b8; margin: 0 0 10px 0; font-size: 1rem; letter-spacing: 0.02em; }
+.how-box ol { margin: 0; padding-left: 20px; color: #cbd5e1; font-size: 0.9rem; }
+.how-box li { margin-bottom: 5px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -119,6 +115,8 @@ Upload **CSV or Excel** files to automatically:
         disabled=file_bytes is None,
         use_container_width=True,
     )
+    if file_bytes is None:
+        st.caption("⬆️ Upload a file or load the sample CSV to enable processing.")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # How it works — top of main area
