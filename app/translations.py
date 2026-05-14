@@ -32,7 +32,7 @@ _T: dict[str, dict] = {
         # Sidebar — demo
         "quick_demo":   "🎯 Quick demo",
         "demo_caption": "Realistic HR data with duplicates and missing values",
-        "demo_caption_template": "{rows} rows · {dupes} duplicates · {nulls} missing values · realistic HR data",
+        "demo_caption_template": "Demo file available: {rows} rows · {dupes} duplicates · {nulls} missing values · sample HR data",
         "load_sample":  "⚡ Load sample CSV",
         "sample_loaded": "Sample loaded ✓",
         # Sidebar — upload
@@ -170,7 +170,7 @@ _T: dict[str, dict] = {
         # Sidebar — demo
         "quick_demo":   "🎯 Demo rápido",
         "demo_caption": "Datos HR reales con duplicados y valores faltantes",
-        "demo_caption_template": "{rows} filas · {dupes} duplicados · {nulls} valores faltantes · datos HR reales",
+        "demo_caption_template": "Archivo demo disponible: {rows} filas · {dupes} duplicados · {nulls} valores faltantes · datos HR de ejemplo",
         "load_sample":  "⚡ Cargar CSV de ejemplo",
         "sample_loaded": "Ejemplo cargado ✓",
         # Sidebar — upload
